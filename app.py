@@ -4,9 +4,7 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 
 app = Flask(__name__)
-<<<<<<< Updated upstream
 CORS(app)  # 启用CORS支持
-=======
 CORS(app, 
      resources={r"/api/*": {
          "origins": ["http://127.0.0.1:5500"],
@@ -23,7 +21,6 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
->>>>>>> Stashed changes
 
 # ==================== 基础数据配置 ====================
 TIANGAN_WUXING = {
