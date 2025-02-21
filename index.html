@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日指引</title>
+    <link rel="stylesheet" href="styles.css">
+    
+</head>
+<body>
+    <div class="container">
+        <h1>今日指引</h1>
+        
+        <!-- 每日励志话语 -->
+        <div class="daily-quote">
+            <p class="quote-text" id="quoteText">生活中不是缺少美，而是缺少发现美的眼睛。</p>
+            <p class="quote-author" id="quoteAuthor">— 罗丹</p>
+        </div>
+
+        <button class="open-popup-btn" onclick="openPopup()">填写个人信息</button>
+
+        <!-- 弹出层 -->
+        <div class="popup-overlay" id="popupOverlay">
+            <div class="popup-card">
+                <span class="close-popup" onclick="closePopup()">&times;</span>
+                <h2>个人信息</h2>
+                <form id="baziForm">
+                    <div class="form-group">
+                        <label for="name">姓名：</label>
+                        <input type="text" id="name" placeholder="请输入姓名" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sex">性别：</label>
+                        <select id="sex">
+                            <option value="0">男</option>
+                            <option value="1">女</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="type">出生类型：</label>
+                        <select id="type">
+                            <option value="0">农历</option>
+                            <option value="1">公历</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="year">出生年份：</label>
+                        <input type="number" id="year" placeholder="请输入出生年份" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="month">出生月份：</label>
+                        <input type="number" id="month" placeholder="请输入出生月份" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="day">出生日：</label>
+                        <input type="number" id="day" placeholder="请输入出生日期" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hours">出生小时：</label>
+                        <input type="number" id="hours" placeholder="请输入出生小时" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="minute">出生分钟：</label>
+                        <input type="number" id="minute" placeholder="请输入出生分钟" required>
+                    </div>
+                    
+                    <button type="submit">分析八字</button>
+                </form>
+            </div>
+        </div>
+
+       
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+
+</html>

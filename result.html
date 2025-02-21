@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>八字分析结果 - 今日指引</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>八字分析结果</h1>
+
+        <div class="results-grid">
+            <div class="result-card basic-info">
+                <h3>基本信息</h3>
+                <div id="basicInfo"></div>
+            </div>
+
+            <div class="result-card wuxing-analysis">
+                <h3>五行分析</h3>
+                <div id="wuxingAnalysis" class="wuxing-circles"></div>
+            </div>
+
+            <div class="result-card wuxing-likes">
+                <h3>五行喜忌</h3>
+                <div id="wuxingLikes"></div>
+            </div>
+
+            <div class="result-card today-ganzhi">
+                <h3>今日干支</h3>
+                <div id="todayGanzhi"></div>
+            </div>
+
+            <div class="result-card lucky-numbers">
+                <h3>幸运数字</h3>
+                <div id="luckyNumbers"></div>
+            </div>
+
+            <div class="result-card lucky-color">
+                <h3>今日幸运色</h3>
+                <div id="luckyColor"></div>
+            </div>
+
+            <div class="result-card crystal-recommendations">
+                <h3>吉用神水晶推荐</h3>
+                <div id="crystalRecommendations"></div>
+            </div>
+
+            <div class="result-card wuxing-deficiency">
+                <h3>五行缺失分析</h3>
+                <div id="wuxingDeficiency"></div>
+            </div>
+
+            <div class="result-card daily-activities">
+                <h3>每日推荐活动</h3>
+                <div id="dailyActivities"></div>
+            </div>
+        </div>
+
+        <button class="back-btn" onclick="window.location.href='index.html'">返回填写信息</button>
+    </div>
+
+    <script src="result.js"></script>
+</body>
+</html>
