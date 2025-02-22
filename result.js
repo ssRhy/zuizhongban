@@ -61,23 +61,25 @@ function handleAnalysisData(data) {
     水: ["water", "#2196F3"],
   };
 
-  const wuxingHtml = Object.entries(data.五行强弱)
-    .map(
-      ([element, value]) => `
+  const wuxingHtml = data.五行强弱 
+    ? Object.entries(data.五行强弱)
+        .map(
+          ([element, value]) => `
             <div class="wuxing-circle ${wuxingElements[element][0]}" 
                  data-value="${value.toFixed(1)}">
                 ${element}
             </div>
-        `
-    )
-    .join("");
+          `
+        )
+        .join("")
+    : "暂无五行分析数据";
   document.getElementById("wuxingAnalysis").innerHTML = wuxingHtml;
 
   // 五行喜忌
   document.getElementById("wuxingLikes").innerHTML = `
-        <p>喜用神: ${data.五行喜忌.喜用神}</p>
-        <p>忌神: ${data.五行喜忌.忌神}</p>
-    `;
+    <p>喜用神: ${data.五行喜忌?.喜用神 || '暂无'}</p>
+    <p>忌神: ${data.五行喜忌?.忌神 || '暂无'}</p>
+  `;
 
   // 今日干支
   if (data.今日天干) {
@@ -118,26 +120,28 @@ function handleAnalysisData(data) {
   }
 
   // 水晶推荐
-  const crystalHtml = data.喜用神_天干
-    .map((crystal) => {
-      const [name, description] = crystal.split(":");
-      return `<div class="crystal-item">
-                <strong>${name}</strong>${description ? `: ${description}` : ""}
-            </div>`;
-    })
-    .join("");
+  const crystalHtml = data.喜用神_天干 && Array.isArray(data.喜用神_天干)
+    ? data.喜用神_天干
+        .map((crystal) => {
+          const [name, description] = crystal.split(":");
+          return `<div class="crystal-item">
+                    <strong>${name}</strong>${description ? `: ${description}` : ""}
+                </div>`;
+        })
+        .join("")
+    : "暂无水晶推荐";
   document.getElementById("crystalRecommendations").innerHTML = crystalHtml;
 
   // 五行缺失分析
   let deficiencyHtml = "";
-  if (data.五行_水晶 && Array.isArray(data.五行_水晶.缺失五行)) {
+  if (data.五行_水晶 && data.五行_水晶.缺失五行 && Array.isArray(data.五行_水晶.缺失五行)) {
     if (data.五行_水晶.缺失五行.length > 0) {
       // 显示缺失五行的详细信息
       const weakElementsHtml = data.五行_水晶.缺失五行.map(element => `
         <div class="weak-element">
-          <p>五行: ${element.五行}</p>
-          <p>比例: ${element.比例}</p>
-          <p>分析: ${element.分析}</p>
+          <p>五行: ${element.五行 || '未知'}</p>
+          <p>比例: ${element.比例 || '0'}</p>
+          <p>分析: ${element.分析 || '暂无分析'}</p>
         </div>
       `).join("");
 
@@ -146,30 +150,25 @@ function handleAnalysisData(data) {
           ${weakElementsHtml}
         </div>
         <div class="crystal-recommendations">
-          ${Object.entries(data.五行_水晶.推荐补充水晶)
-            .map(([element, crystals]) => `
-              <div class="element-crystals">
-                <h4>${element}相关水晶:</h4>
-                ${Array.isArray(crystals) ? crystals
-                  .map((crystal) => {
-                    const [name, desc] = crystal.split(":");
-                    return `<div class="crystal-item">
-                      <strong>${name}</strong>${desc ? `: ${desc}` : ""}
-                    </div>`;
-                  })
-                  .join("") : ''}
-              </div>
-            `)
-            .join("")}
-        </div>
-      `;
-    } else {
-      deficiencyHtml = "<p>五行均衡，无明显缺失。</p>";
+          ${data.五行_水晶.推荐补充水晶 
+            ? Object.entries(data.五行_水晶.推荐补充水晶)
+                .map(([element, crystals]) => `
+                  <div class="element-crystals">
+                    <h4>${element}相关水晶:</h4>
+                    <ul>
+                      ${Array.isArray(crystals) 
+                        ? crystals.map(crystal => `<li>${crystal}</li>`).join("")
+                        : '<li>暂无推荐</li>'
+                      }
+                    </ul>
+                  </div>`)
+                .join("")
+            : '暂无水晶推荐'
+          }
+        </div>`;
     }
-  } else {
-    deficiencyHtml = "<p>暂无五行分析数据。</p>";
   }
-  document.getElementById("wuxingDeficiency").innerHTML = deficiencyHtml;
+  document.getElementById("wuxingDeficiency").innerHTML = deficiencyHtml || "暂无五行缺失分析";
 
   // 每日推荐活动
   if (data.推荐活动 && !data.推荐活动.error) {
