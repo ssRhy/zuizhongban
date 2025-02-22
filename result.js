@@ -45,18 +45,11 @@ function updateDailyQuote() {
 }
 
 // 处理分析结果数据
-function handleAnalysisData(data, formData) {
-  if (!formData) {
-    formData = JSON.parse(localStorage.getItem("baziFormData")) || {};
-  }
-
+function handleAnalysisData(data) {
   // 基本信息
   document.getElementById("basicInfo").innerHTML = `
-        <p>姓名: ${formData.name || '未知'}</p>
-        <p>性别: ${formData.sex === '0' ? '男' : '女'}</p>
-        <p>出生时间: ${formData.year}年${formData.month}月${formData.day}日 ${formData.hours}:${formData.minute}</p>
-        <p>八字: ${data.bazi?.join(' ') || '暂无'}</p>
-        <p>日主: ${data.analysis?.日主 || '暂无'}</p>
+        <p>八字: ${data.八字}</p>
+        <p>日主: ${data.日主}</p>
     `;
 
   // 五行分析
@@ -68,41 +61,23 @@ function handleAnalysisData(data, formData) {
     水: ["water", "#2196F3"],
   };
 
-  const wuxingHtml = data.analysis?.五行强弱 
-    ? Object.entries(data.analysis.五行强弱)
-        .map(
-          ([element, value]) => `
+  const wuxingHtml = Object.entries(data.五行强弱)
+    .map(
+      ([element, value]) => `
             <div class="wuxing-circle ${wuxingElements[element][0]}" 
                  data-value="${value.toFixed(1)}">
                 ${element}
             </div>
-          `
-        )
-        .join("")
-    : "暂无五行分析数据";
+        `
+    )
+    .join("");
   document.getElementById("wuxingAnalysis").innerHTML = wuxingHtml;
 
   // 五行喜忌
   document.getElementById("wuxingLikes").innerHTML = `
-    <p>喜用神: ${data.analysis?.五行喜忌?.喜用神 || '暂无'}</p>
-    <p>忌神: ${data.analysis?.五行喜忌?.忌神 || '暂无'}</p>
-  `;
-
-  // 幸运数字
-  const luckyNumbersHtml = data.lucky_numbers && Array.isArray(data.lucky_numbers)
-    ? data.lucky_numbers
-        .map((num) => `<span class="number">${num}</span>`)
-        .join("")
-    : "暂无幸运数字";
-  document.getElementById("luckyNumbers").innerHTML = luckyNumbersHtml;
-
-  // 今日幸运色
-  document.getElementById("luckyColor").innerHTML = data.lucky_color 
-    ? `
-        <div class="lucky-color-display" style="background-color: ${data.lucky_color.color || '#FFFFFF'}"></div>
-        <p class="color-strategy">${data.lucky_color.strategy || '暂无建议'}</p>
-      `
-    : "暂无幸运色信息";
+        <p>喜用神: ${data.五行喜忌.喜用神}</p>
+        <p>忌神: ${data.五行喜忌.忌神}</p>
+    `;
 
   // 今日干支
   if (data.今日天干) {
@@ -111,6 +86,18 @@ function handleAnalysisData(data, formData) {
             <p>地支：${data.今日天干[1] || "未知"}</p>
         `;
   }
+
+  // 幸运数字
+  const luckyNumbersHtml = data.幸运数字
+    .map((num) => `<span class="number">${num}</span>`)
+    .join("");
+  document.getElementById("luckyNumbers").innerHTML = luckyNumbersHtml;
+
+  // 今日幸运色
+  document.getElementById("luckyColor").innerHTML = `
+        <div class="lucky-color-display" style="background-color: ${data.幸运颜色.color}"></div>
+        <p class="color-strategy">${data.幸运颜色.strategy}</p>
+    `;
 
   // 幸运色
   const luckyColorDiv = document.getElementById("luckyColor");
@@ -131,55 +118,68 @@ function handleAnalysisData(data, formData) {
   }
 
   // 水晶推荐
-  const crystalHtml = data.喜用神_天干 && Array.isArray(data.喜用神_天干)
-    ? data.喜用神_天干
-        .map((crystal) => {
-          const [name, description] = crystal.split(":");
-          return `<div class="crystal-item">
-                    <strong>${name}</strong>${description ? `: ${description}` : ""}
-                </div>`;
-        })
-        .join("")
-    : "暂无水晶推荐";
+  const crystalHtml = data.喜用神_天干
+    .map((crystal) => {
+      const [name, description] = crystal.split(":");
+      return `<div class="crystal-item">
+                <strong>${name}</strong>${description ? `: ${description}` : ""}
+            </div>`;
+    })
+    .join("");
   document.getElementById("crystalRecommendations").innerHTML = crystalHtml;
 
   // 五行缺失分析
   let deficiencyHtml = "";
-  if (data.五行_水晶 && data.五行_水晶.缺失五行 && Array.isArray(data.五行_水晶.缺失五行)) {
+  if (data.五行_水晶 && Array.isArray(data.五行_水晶.缺失五行)) {
     if (data.五行_水晶.缺失五行.length > 0) {
       // 显示缺失五行的详细信息
-      const weakElementsHtml = data.五行_水晶.缺失五行.map(element => `
+      const weakElementsHtml = data.五行_水晶.缺失五行
+        .map(
+          (element) => `
         <div class="weak-element">
-          <p>五行: ${element.五行 || '未知'}</p>
-          <p>比例: ${element.比例 || '0'}</p>
-          <p>分析: ${element.分析 || '暂无分析'}</p>
+          <p>五行: ${element.五行}</p>
+          <p>比例: ${element.比例}</p>
+          <p>分析: ${element.分析}</p>
         </div>
-      `).join("");
+      `
+        )
+        .join("");
 
       deficiencyHtml = `
         <div class="wuxing-deficiency">
           ${weakElementsHtml}
         </div>
         <div class="crystal-recommendations">
-          ${data.五行_水晶.推荐补充水晶 
-            ? Object.entries(data.五行_水晶.推荐补充水晶)
-                .map(([element, crystals]) => `
-                  <div class="element-crystals">
-                    <h4>${element}相关水晶:</h4>
-                    <ul>
-                      ${Array.isArray(crystals) 
-                        ? crystals.map(crystal => `<li>${crystal}</li>`).join("")
-                        : '<li>暂无推荐</li>'
-                      }
-                    </ul>
-                  </div>`)
-                .join("")
-            : '暂无水晶推荐'
-          }
-        </div>`;
+          ${Object.entries(data.五行_水晶.推荐补充水晶)
+            .map(
+              ([element, crystals]) => `
+              <div class="element-crystals">
+                <h4>${element}相关水晶:</h4>
+                ${
+                  Array.isArray(crystals)
+                    ? crystals
+                        .map((crystal) => {
+                          const [name, desc] = crystal.split(":");
+                          return `<div class="crystal-item">
+                      <strong>${name}</strong>${desc ? `: ${desc}` : ""}
+                    </div>`;
+                        })
+                        .join("")
+                    : ""
+                }
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+      `;
+    } else {
+      deficiencyHtml = "<p>五行均衡，无明显缺失。</p>";
     }
+  } else {
+    deficiencyHtml = "<p>暂无五行分析数据。</p>";
   }
-  document.getElementById("wuxingDeficiency").innerHTML = deficiencyHtml || "暂无五行缺失分析";
+  document.getElementById("wuxingDeficiency").innerHTML = deficiencyHtml;
 
   // 每日推荐活动
   if (data.推荐活动 && !data.推荐活动.error) {
@@ -218,16 +218,25 @@ function handleAnalysisData(data, formData) {
 document.addEventListener("DOMContentLoaded", function () {
   // 获取并显示分析结果
   const formData = JSON.parse(localStorage.getItem("baziFormData"));
-  
+
   if (!formData) {
     console.error("未找到表单数据");
     return;
   }
 
   // 验证必要的字段
-  const requiredFields = ['name', 'sex', 'type', 'year', 'month', 'day', 'hours', 'minute'];
-  const missingFields = requiredFields.filter(field => !formData[field]);
-  
+  const requiredFields = [
+    "name",
+    "sex",
+    "type",
+    "year",
+    "month",
+    "day",
+    "hours",
+    "minute",
+  ];
+  const missingFields = requiredFields.filter((field) => !formData[field]);
+
   if (missingFields.length > 0) {
     console.error("缺少必要的字段:", missingFields);
     return;
@@ -244,16 +253,18 @@ document.addEventListener("DOMContentLoaded", function () {
     headers: {
       "Content-Type": "application/json",
     },
+    mode: "cors",
+    credentials: "include",
     body: JSON.stringify({
       name: formData.name,
       sex: parseInt(formData.sex),
-      birth_type: parseInt(formData.type),
+      type: parseInt(formData.type),
       year: parseInt(formData.year),
       month: parseInt(formData.month),
       day: parseInt(formData.day),
       hours: parseInt(formData.hours),
-      minute: parseInt(formData.minute)
-    })
+      minute: parseInt(formData.minute),
+    }),
   })
     .then((response) => response.json())
     .then((data) => {
@@ -262,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
           div.innerHTML = `<div class="error">错误: ${data.error}</div>`;
         });
       } else {
-        handleAnalysisData(data, formData);
+        handleAnalysisData(data);
       }
     })
     .catch((error) => {

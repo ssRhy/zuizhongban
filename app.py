@@ -12,10 +12,31 @@ def serve_static(filename):
 
 CORS(app, 
      resources={r"/*": {
-         "origins": ["http://127.0.0.1:5000", "http://127.0.0.1:5500", "http://178.16.140.245:5000", "http://178.16.140.245"],
+         "origins": [
+             "http://127.0.0.1:5000",  # 本地开发
+             "http://127.0.0.1:5500",  # Live Server
+             "http://178.16.140.245",  # VPS IP
+             "http://178.16.140.245:5000"  # Flask/Gunicorn 端口
+         ],
          "methods": ["GET", "POST", "OPTIONS"],
-         "allow_headers": ["Content-Type"]
+         "allow_headers": ["Content-Type"],
+         "supports_credentials": True
      }})
+
+@app.after_request
+def after_request(response):
+    allowed_origins = [
+        'http://127.0.0.1:5501',  # 本地开发
+        'http://178.16.140.245',  # VPS IP
+        'http://178.16.140.245:5000'  # Flask/Gunicorn 端口
+    ]
+    origin = request.headers.get('Origin')
+    if origin in allowed_origins:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # ==================== 基础数据配置 ====================
 TIANGAN_WUXING = {
@@ -321,16 +342,16 @@ def calculate_lucky_numbers(analysis_result: dict) -> list:
     """
     根据八字分析结果计算幸运数字。
     逻辑：
-      - 从“喜用神”字段中提取最弱五行（格式："木(火)"，取括号前部分）
-      - 从“日主”字段中提取日主五行（格式："丙(火)"，取括号内部分）
+      - 从"喜用神"字段中提取最弱五行（格式："木(火)"，取括号前部分）
+      - 从"日主"字段中提取日主五行（格式："丙(火)"，取括号内部分）
       - 利用五行数字映射表组合两部分对应的数字（去重后返回列表）
     """
     try:
-        # 提取最弱五行（取“喜用神”中括号前的部分）
+        # 提取最弱五行（取"喜用神"中括号前的部分）
         xi_shen_str = analysis_result["五行喜忌"]["喜用神"]
         weakest_wuxing = xi_shen_str.split('(')[0]
         
-        # 提取日主五行（取“日主”中括号内的部分）
+        # 提取日主五行（取"日主"中括号内的部分）
         rizhu_str = analysis_result["日主"]
         day_master_wuxing = rizhu_str.split('(')[1].strip(')')
         
@@ -518,6 +539,7 @@ def visualize_color(hex_color):
 
 # ==================== Flask 后端接口 ====================
 #即对接文档
+#即对接文档
 @app.route('/', methods=['GET'])
 def root():
     return send_file('index.html')
@@ -525,80 +547,224 @@ def root():
 @app.route('/analyze', methods=['POST', 'OPTIONS'])
 def analyze_bazi():
     if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
+        return '', 200
 
     try:
         data = request.json
         if not data:
             return jsonify({'error': '未接收到数据'}), 400
-
+            
         # 获取输入数据
         name = data.get('name')
         sex = data.get('sex')
-        birth_type = data.get('birth_type')
+        birth_type = data.get('type')
         year = data.get('year')
         month = data.get('month')
         day = data.get('day')
         hours = data.get('hours')
         minute = data.get('minute')
-
+        
         # 检查必要参数
         required_fields = {
             'name': name,
             'sex': sex,
-            'birth_type': birth_type,
+            'type': birth_type,
             'year': year,
             'month': month,
             'day': day,
             'hours': hours,
             'minute': minute
         }
-
+        
         missing_fields = [field for field, value in required_fields.items() if value is None]
         if missing_fields:
             return jsonify({'error': f'缺少必要的参数: {", ".join(missing_fields)}'}), 400
-
-        # 获取八字数据
-        bazi_list = get_bazi_from_api(name, sex, birth_type, year, month, day, hours, minute)
-
-        # 分析八字
+            
+        # 类型检查
+        try:
+            sex = int(sex)
+            birth_type = int(birth_type)
+            year = int(year)
+            month = int(month)
+            day = int(day)
+            hours = int(hours)
+            minute = int(minute)
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'参数类型错误: {str(e)}'}), 400
+            
+        # 调用API获取八字数据
+        bazi_list = get_bazi_from_api(
+            name, sex, birth_type, year, month, day, hours, minute
+        )
+        
+        if not bazi_list or len(bazi_list) != 4:
+            return jsonify({'error': '无法获取有效的八字数据'}), 400
+        
+        # 进行八字分析
         analysis_result = advanced_analyze(bazi_list)
-
-        # 获取今日干支
-        today_gan, today_zhi = get_today_ganzhi()
-
-        # 生成今日幸运色
-        lucky_color_info = generate_daily_lucky_color(bazi_list, today_gan, today_zhi)
-
-        # 获取水晶建议
-        crystal_suggestions = []
-        crystal_suggestions.extend(choose_crystals_based_on_xi_shen(analysis_result))
-        crystal_suggestions.extend(choose_crystals_based_on_wuxing_deficiency(analysis_result))
-
-        # 获取幸运数字
+        if "error" in analysis_result:
+            return jsonify({'error': analysis_result["error"]}), 400
+        
+        # 获取水晶推荐
+        crystal_recommendations = choose_crystals_based_on_xi_shen(analysis_result)
+        if "error" in crystal_recommendations:
+            return jsonify({'error': crystal_recommendations["error"]}), 400
+        
+        # 获取五行缺失分析
+        wuxing_crystal_recommendations = choose_crystals_based_on_wuxing_deficiency(analysis_result)
+        if "error" in wuxing_crystal_recommendations:
+            return jsonify({'error': wuxing_crystal_recommendations["error"]}), 400
+        
+        # 计算幸运数字
         lucky_numbers = calculate_lucky_numbers(analysis_result)
 
-        # 获取日常活动建议
-        daily_activities = choose_daily_activities(analysis_result)
+        # 获取今日干支
+        today_tiangan, today_dizhi = get_today_ganzhi()
+        if today_tiangan is None or today_dizhi is None:
+            today_tiangan = bazi_list[0][0]
+            today_dizhi = bazi_list[0][1]
 
-        response_data = {
-            'bazi': bazi_list,
-            'analysis': analysis_result,
-            'lucky_color': lucky_color_info,
-            'crystals': crystal_suggestions,
-            'lucky_numbers': lucky_numbers,
-            'daily_activities': daily_activities
+        # 计算幸运颜色
+        lucky_color_result = generate_daily_lucky_color(bazi_list, today_tiangan, today_dizhi)
+        if "error" in lucky_color_result:
+            return jsonify({'error': lucky_color_result["error"]}), 400
+
+        # 添加颜色可视化信息
+        color_visualization = visualize_color(lucky_color_result['lucky_color'])
+        lucky_color_result['visualization'] = color_visualization
+
+        # 推荐活动
+        activities_recommendation = choose_daily_activities(analysis_result)
+
+        # 合并分析结果
+        result = {
+            '八字': " ".join(bazi_list),
+            '日主': analysis_result.get('日主', ''),
+            '五行强弱': analysis_result.get('五行强弱', {}),
+            '五行喜忌': analysis_result.get('五行喜忌', {}),
+            '喜用神_天干': crystal_recommendations.get('推荐水晶', []),
+            '忌神_天干': analysis_result.get('忌神_天干', []),
+            '五行_水晶': {
+                '缺失五行': wuxing_crystal_recommendations.get('缺失五行', []),
+                '推荐补充水晶': wuxing_crystal_recommendations.get('推荐补充水晶', {})
+            },
+            '幸运数字': lucky_numbers,
+            '幸运颜色': {
+                'color': lucky_color_result['lucky_color'],
+                'strategy': lucky_color_result['strategy'],
+            },
+            '推荐活动': activities_recommendation,
+            '今日天干': [today_tiangan, today_dizhi]
         }
 
-        return jsonify(response_data)
-
+        response = jsonify(result)
+        return response
+        
     except Exception as e:
         print("错误:", str(e))  # 添加日志
-        return jsonify({'error': str(e)}), 500
+        error_response = jsonify({'error': f'服务器错误: {str(e)}'})
+        return error_response, 500
+
+@app.route('/api/analyze', methods=['POST', 'OPTIONS'])
+def analyze_bazi_api():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '未接收到数据'}), 400
+        
+        # 获取输入数据
+        name = data.get('name')
+        sex = data.get('sex')
+        birth_type = data.get('type')
+        year = data.get('year')
+        month = data.get('month')
+        day = data.get('day')
+        hours = data.get('hours')
+        minute = data.get('minute')
+        
+        # 检查必要参数
+        if not all([name, isinstance(sex, int), isinstance(birth_type, int), 
+                   year, month, day, hours, minute]):
+            return jsonify({'error': '请提供所有必要的参数'}), 400
+        
+        try:
+            # 调用API获取八字数据
+            bazi_list = get_bazi_from_api(
+                name, sex, birth_type, year, month, day, hours, minute
+            )
+            
+            if not bazi_list or len(bazi_list) != 4:
+                return jsonify({'error': '无法获取有效的八字数据'}), 400
+            
+            # 进行八字分析
+            analysis_result = advanced_analyze(bazi_list)
+            if "error" in analysis_result:
+                return jsonify({'error': analysis_result["error"]}), 400
+            
+            # 获取水晶推荐
+            crystal_recommendations = choose_crystals_based_on_xi_shen(analysis_result)
+            if "error" in crystal_recommendations:
+                return jsonify({'error': crystal_recommendations["error"]}), 400
+            
+            # 获取五行缺失分析
+            wuxing_crystal_recommendations = choose_crystals_based_on_wuxing_deficiency(analysis_result)
+            if "error" in wuxing_crystal_recommendations:
+                return jsonify({'error': wuxing_crystal_recommendations["error"]}), 400
+            
+            # 计算幸运数字
+            lucky_numbers = calculate_lucky_numbers(analysis_result)
+
+            # 获取今日干支
+            today_tiangan, today_dizhi = get_today_ganzhi()
+            if today_tiangan is None or today_dizhi is None:
+                today_tiangan = bazi_list[0][0]
+                today_dizhi = bazi_list[0][1]
+
+            # 计算幸运颜色
+            lucky_color_result = generate_daily_lucky_color(bazi_list, today_tiangan, today_dizhi)
+            if "error" in lucky_color_result:
+                return jsonify({'error': lucky_color_result["error"]}), 400
+
+            # 添加颜色可视化信息
+            color_visualization = visualize_color(lucky_color_result['lucky_color'])
+            lucky_color_result['visualization'] = color_visualization
+
+            # 推荐活动
+            activities_recommendation = choose_daily_activities(analysis_result)
+
+            # 合并分析结果
+            result = {
+                '八字': " ".join(bazi_list),
+                '日主': analysis_result.get('日主', ''),
+                '五行强弱': analysis_result.get('五行强弱', {}),
+                '五行喜忌': analysis_result.get('五行喜忌', {}),
+                '喜用神_天干': crystal_recommendations.get('推荐水晶', []),
+                '忌神_天干': analysis_result.get('忌神_天干', []),
+                '五行_水晶': {
+                    '缺失五行': wuxing_crystal_recommendations.get('缺失五行', []),
+                    '推荐补充水晶': wuxing_crystal_recommendations.get('推荐补充水晶', {})
+                },
+                '幸运数字': lucky_numbers,
+                '幸运颜色': {
+                    'color': lucky_color_result['lucky_color'],
+                    'strategy': lucky_color_result['strategy'],
+                },
+                '推荐活动': activities_recommendation,
+                '今日天干': [today_tiangan, today_dizhi]
+            }
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            return jsonify({'error': f'处理数据时出错: {str(e)}'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': f'请求处理失败: {str(e)}'}), 400
+
+@app.route('/api/analyze', methods=['OPTIONS'])
+def handle_options():
+    response = make_response()
+    return response
 
 #把主程序入口换成这个
 if __name__ == "__main__":
