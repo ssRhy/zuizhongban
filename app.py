@@ -4,26 +4,15 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 
 app = Flask(__name__)
-<<<<<<< Updated upstream
-CORS(app)  # 启用CORS支持
-=======
+
 CORS(app, 
-     resources={r"/api/*": {
-         "origins": ["http://127.0.0.1:5500"],
+     resources={r"/*": {
+         "origins": ["http://127.0.0.1:5500", "https://finally-lemon.vercel.app", "https://your-domain.com"],  
          "methods": ["GET", "POST", "OPTIONS"],
          "allow_headers": ["Content-Type"],
-         "supports_credentials": True
-     }},
-     supports_credentials=True)
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:5500')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
->>>>>>> Stashed changes
+         "supports_credentials": True,
+         "max_age": 3600
+     }})
 
 # ==================== 基础数据配置 ====================
 TIANGAN_WUXING = {
@@ -265,27 +254,65 @@ def choose_crystals_based_on_xi_shen(analysis_result):
         return {"error": "分析结果不完整，无法选择水晶"}
 
         # ==================== 根据五行缺失情况选择水晶 ====================
+       # ==================== 根据五行缺失情况选择水晶 ====================
 def choose_crystals_based_on_wuxing_deficiency(analysis_result):
     """
     根据八字五行的缺失情况来选择合适的水晶
     """
     try:
-        wuxing_count = analysis_result["五行强弱"]
-        missing_elements = [wuxing for wuxing, count in wuxing_count.items() if count == 0]
+        print("分析结果:", analysis_result)  # 调试信息
+        wuxing_balance = analysis_result.get("五行强弱", {})
+        print("五行强弱:", wuxing_balance)  # 调试信息
+        
+        if not wuxing_balance:
+            print("没有五行强弱数据")  # 调试信息
+            return {"缺失五行": [], "推荐补充水晶": {}}
+        
+        # 计算平均值
+        values = [float(v) for v in wuxing_balance.values()]
+        avg = sum(values) / len(values) if values else 0
+        print(f"五行平均值: {avg}")  # 调试信息
+        
+        # 找出显著低于平均值的五行（低于平均值20%视为偏弱）
+        threshold = avg * 0.8
+        print(f"阈值: {threshold}")  # 调试信息
+        
+        weak_elements = []
+        for wuxing, percentage in wuxing_balance.items():
+            try:
+                value = float(percentage)
+                if value < threshold:
+                    weak_elements.append({
+                        "五行": wuxing,
+                        "比例": f"{value}%",
+                        "分析": f"{wuxing}的能量为{value}%，低于平均水平，建议补充"
+                    })
+                    print(f"发现偏弱五行: {wuxing}, 比例: {value}%")  # 调试信息
+            except (ValueError, TypeError) as e:
+                print(f"处理{wuxing}时出错: {str(e)}")  # 调试信息
+                continue
+        
+        print("偏弱五行:", weak_elements)  # 调试信息
         
         # 根据缺失的五行选择水晶
         crystals_for_missing_elements = {}
-        for missing_element in missing_elements:
-            crystals_for_missing_elements[missing_element] = crystals_by_wuxing.get(missing_element, [])
+        for element in weak_elements:
+            wuxing = element["五行"]
+            crystals = crystals_by_wuxing.get(wuxing, [])
+            if crystals:  # 只有当有推荐的水晶时才添加
+                crystals_for_missing_elements[wuxing] = crystals
+            print(f"为{wuxing}推荐水晶: {crystals}")  # 调试信息
         
-        return {
-            "缺失五行": missing_elements,
+        result = {
+            "缺失五行": weak_elements,
             "推荐补充水晶": crystals_for_missing_elements
         }
+        print("返回结果:", result)  # 调试信息
+        return result
+        
     except Exception as e:
-        return {"error": str(e)}
-
-
+        print("错误:", str(e))  # 调试信息
+        return {"缺失五行": [], "推荐补充水晶": {}}
         # ==================== 幸运数字计算函数 ====================
 def calculate_lucky_numbers(analysis_result: dict) -> list:
     """
@@ -316,7 +343,7 @@ def get_bazi_from_api(name, sex, birth_type, year, month, day, hours, minute):
     """调用外部API获取用户八字数据"""
     url = 'https://api.yuanfenju.com/index.php/v1/Bazi/paipan'
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    API_KEY = 'ZexGJR4TIAWMq1MA7PlXZgWy6'
+    API_KEY = 'iq3cJAvmtKbYgLAMVF7Nl3XRk'
     
     data = {
         'api_key': API_KEY,
@@ -384,7 +411,7 @@ def generate_daily_lucky_color(bazi_list: list, today_tiangan: str, today_dizhi:
     
     # 从分析结果中提取日主及五行喜忌信息
     # 注意：analysis['五行喜忌']['喜用神'] 格式如 "木(火)"
-    wuxing_xi_ji_str = analysis['五行喜忌']['喜用神']  # 例如 "木(火)"
+    wuxing_xi_ji_str = analysis["五行喜忌"]["喜用神"]
     beneficial_element = wuxing_xi_ji_str.split('(')[1].strip(')')
     
     detrimental_str = analysis['五行喜忌']['忌神']
@@ -488,6 +515,60 @@ def visualize_color(hex_color):
 
 # ==================== Flask 后端接口 ====================
 #即对接文档
+@app.route('/', methods=['POST'])
+def root():
+    try:
+        data = request.get_json()
+        print("收到的数据:", data)  # 添加日志
+        
+        if not data:
+            return jsonify({'error': '未接收到数据'}), 400
+            
+        # 获取输入数据
+        name = data.get('name')
+        sex = data.get('sex')
+        birth_type = data.get('type')
+        year = data.get('year')
+        month = data.get('month')
+        day = data.get('day')
+        hours = data.get('hours')
+        minute = data.get('minute')
+        
+        # 检查必要参数
+        required_fields = {
+            'name': name,
+            'sex': sex,
+            'type': birth_type,
+            'year': year,
+            'month': month,
+            'day': day,
+            'hours': hours,
+            'minute': minute
+        }
+        
+        missing_fields = [field for field, value in required_fields.items() if value is None]
+        if missing_fields:
+            return jsonify({'error': f'缺少必要的参数: {", ".join(missing_fields)}'}), 400
+            
+        # 类型检查
+        try:
+            sex = int(sex)
+            birth_type = int(birth_type)
+            year = int(year)
+            month = int(month)
+            day = int(day)
+            hours = int(hours)
+            minute = int(minute)
+        except (ValueError, TypeError) as e:
+            return jsonify({'error': f'参数类型错误: {str(e)}'}), 400
+            
+        # 调用原有的分析函数
+        return analyze_bazi()
+        
+    except Exception as e:
+        print("错误:", str(e))  # 添加日志
+        return jsonify({'error': f'服务器错误: {str(e)}'}), 500
+
 @app.route('/api/analyze', methods=['POST', 'OPTIONS'])
 def analyze_bazi():
     try:
@@ -562,7 +643,7 @@ def analyze_bazi():
             
             # 合并分析结果
             result = {
-                '八字': ' '.join(bazi_list),
+                '八字': " ".join(bazi_list),
                 '日主': analysis_result.get('日主', ''),
                 '五行强弱': analysis_result.get('五行强弱', {}),
                 '五行喜忌': analysis_result.get('五行喜忌', {}),
@@ -592,10 +673,6 @@ def analyze_bazi():
 @app.route('/api/analyze', methods=['OPTIONS'])
 def handle_options():
     response = make_response()
-    response.headers.add("Access-Control-Allow-Origin", "http://127.0.0.1:5500")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
     return response
 
 #把主程序入口换成这个

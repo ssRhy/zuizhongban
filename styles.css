@@ -164,10 +164,6 @@ h2, h3, h4 {
 
 .crystal-item {
     background: white;
-<<<<<<< Updated upstream
-    padding: 8px 12px;
-    margin: 8px 0;
-=======
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -229,14 +225,11 @@ h2, h3, h4 {
     color: #666;
     background: #f5f5f5;
     padding: 4px 10px;
->>>>>>> Stashed changes
     border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-<<<<<<< Updated upstream
 /* 五行圆圈样式 */
-=======
 .color-preview {
     width: 20px;
     height: 20px;
@@ -293,7 +286,6 @@ h2, h3, h4 {
 }
 
 /* 五行圆圈容器 */
->>>>>>> Stashed changes
 .wuxing-circles {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
