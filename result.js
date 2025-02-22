@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
       year: parseInt(formData.year),
       month: parseInt(formData.month),
       day: parseInt(formData.day),
-      hours: parseInt(formData.hours || formData.hour),
+      hours: parseInt(formData.hour),
       minute: parseInt(formData.minute)
     })
   })
