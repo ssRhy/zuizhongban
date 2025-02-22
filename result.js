@@ -48,8 +48,11 @@ function updateDailyQuote() {
 function handleAnalysisData(data) {
   // 基本信息
   document.getElementById("basicInfo").innerHTML = `
-        <p>八字: ${data.八字}</p>
-        <p>日主: ${data.日主}</p>
+        <p>姓名: ${data.bazi?.name || formData.name || '未知'}</p>
+        <p>性别: ${formData.sex === '0' ? '男' : '女'}</p>
+        <p>出生时间: ${formData.year}年${formData.month}月${formData.day}日 ${formData.hours}:${formData.minute}</p>
+        <p>八字: ${data.bazi?.join(' ') || '暂无'}</p>
+        <p>日主: ${data.analysis?.日主 || '暂无'}</p>
     `;
 
   // 五行分析
@@ -61,8 +64,8 @@ function handleAnalysisData(data) {
     水: ["water", "#2196F3"],
   };
 
-  const wuxingHtml = data.五行强弱 
-    ? Object.entries(data.五行强弱)
+  const wuxingHtml = data.analysis?.五行强弱 
+    ? Object.entries(data.analysis.五行强弱)
         .map(
           ([element, value]) => `
             <div class="wuxing-circle ${wuxingElements[element][0]}" 
@@ -77,9 +80,25 @@ function handleAnalysisData(data) {
 
   // 五行喜忌
   document.getElementById("wuxingLikes").innerHTML = `
-    <p>喜用神: ${data.五行喜忌?.喜用神 || '暂无'}</p>
-    <p>忌神: ${data.五行喜忌?.忌神 || '暂无'}</p>
+    <p>喜用神: ${data.analysis?.五行喜忌?.喜用神 || '暂无'}</p>
+    <p>忌神: ${data.analysis?.五行喜忌?.忌神 || '暂无'}</p>
   `;
+
+  // 幸运数字
+  const luckyNumbersHtml = data.lucky_numbers && Array.isArray(data.lucky_numbers)
+    ? data.lucky_numbers
+        .map((num) => `<span class="number">${num}</span>`)
+        .join("")
+    : "暂无幸运数字";
+  document.getElementById("luckyNumbers").innerHTML = luckyNumbersHtml;
+
+  // 今日幸运色
+  document.getElementById("luckyColor").innerHTML = data.lucky_color 
+    ? `
+        <div class="lucky-color-display" style="background-color: ${data.lucky_color.color || '#FFFFFF'}"></div>
+        <p class="color-strategy">${data.lucky_color.strategy || '暂无建议'}</p>
+      `
+    : "暂无幸运色信息";
 
   // 今日干支
   if (data.今日天干) {
@@ -88,18 +107,6 @@ function handleAnalysisData(data) {
             <p>地支：${data.今日天干[1] || "未知"}</p>
         `;
   }
-
-  // 幸运数字
-  const luckyNumbersHtml = data.幸运数字
-    .map((num) => `<span class="number">${num}</span>`)
-    .join("");
-  document.getElementById("luckyNumbers").innerHTML = luckyNumbersHtml;
-
-  // 今日幸运色
-  document.getElementById("luckyColor").innerHTML = `
-        <div class="lucky-color-display" style="background-color: ${data.幸运颜色.color}"></div>
-        <p class="color-strategy">${data.幸运颜色.strategy}</p>
-    `;
 
   // 幸运色
   const luckyColorDiv = document.getElementById("luckyColor");
