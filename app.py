@@ -1,9 +1,14 @@
 import requests
 import datetime
-from flask import Flask, request, jsonify, make_response, send_file
+from flask import Flask, request, jsonify, make_response, send_file, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
+
+# 添加静态文件路由
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('.', filename)
 
 CORS(app, 
      resources={r"/*": {
