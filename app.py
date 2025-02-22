@@ -575,7 +575,8 @@ def analyze_bazi():
         lucky_color_info = generate_daily_lucky_color(bazi_list, today_gan, today_zhi)
 
         # 获取水晶建议
-        crystal_suggestions = choose_crystals_based_on_xi_shen(analysis_result)
+        crystal_suggestions = []
+        crystal_suggestions.extend(choose_crystals_based_on_xi_shen(analysis_result))
         crystal_suggestions.extend(choose_crystals_based_on_wuxing_deficiency(analysis_result))
 
         # 获取幸运数字
