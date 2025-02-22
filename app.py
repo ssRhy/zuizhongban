@@ -1,13 +1,13 @@
 import requests
 import datetime
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, send_file
 from flask_cors import CORS
 
 app = Flask(__name__)
 
 CORS(app, 
      resources={r"/*": {
-         "origins": ["http://127.0.0.1:5500", "http://178.16.140.245"],
+         "origins": ["http://127.0.0.1:5000", "http://127.0.0.1:5500", "http://178.16.140.245"],
          "methods": ["GET", "POST", "OPTIONS"],
          "allow_headers": ["Content-Type"],
          "supports_credentials": True,
@@ -515,8 +515,10 @@ def visualize_color(hex_color):
 
 # ==================== Flask 后端接口 ====================
 #即对接文档
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET', 'POST'])
 def root():
+    if request.method == 'GET':
+        return send_file('index.html')
     try:
         data = request.get_json()
         print("收到的数据:", data)  # 添加日志
@@ -676,6 +678,5 @@ def handle_options():
     return response
 
 #把主程序入口换成这个
-
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(debug=True)
