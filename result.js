@@ -45,10 +45,14 @@ function updateDailyQuote() {
 }
 
 // 处理分析结果数据
-function handleAnalysisData(data) {
+function handleAnalysisData(data, formData) {
+  if (!formData) {
+    formData = JSON.parse(localStorage.getItem("baziFormData")) || {};
+  }
+
   // 基本信息
   document.getElementById("basicInfo").innerHTML = `
-        <p>姓名: ${data.bazi?.name || formData.name || '未知'}</p>
+        <p>姓名: ${formData.name || '未知'}</p>
         <p>性别: ${formData.sex === '0' ? '男' : '女'}</p>
         <p>出生时间: ${formData.year}年${formData.month}月${formData.day}日 ${formData.hours}:${formData.minute}</p>
         <p>八字: ${data.bazi?.join(' ') || '暂无'}</p>
@@ -258,7 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
           div.innerHTML = `<div class="error">错误: ${data.error}</div>`;
         });
       } else {
-        handleAnalysisData(data);
+        handleAnalysisData(data, formData);
       }
     })
     .catch((error) => {
