@@ -229,17 +229,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 请求后台进行八字分析
-  const API_URL = window.location.hostname === 'finally-lemon.vercel.app' 
-    ? 'https://your-backend-url.com'  // 替换为您的后端部署URL
-    : 'http://127.0.0.1:5000';
-
-  fetch(API_URL, {
+  fetch("http://178.16.140.245/analyze", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
-    mode: "cors",
     body: JSON.stringify({
       name: formData.name,
       sex: parseInt(formData.sex),

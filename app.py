@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 CORS(app, 
      resources={r"/*": {
-         "origins": ["http://127.0.0.1:5500", "https://finally-lemon.vercel.app", "https://your-domain.com"],  
+         "origins": ["http://127.0.0.1:5500", "http://178.16.140.245"],
          "methods": ["GET", "POST", "OPTIONS"],
          "allow_headers": ["Content-Type"],
          "supports_credentials": True,
