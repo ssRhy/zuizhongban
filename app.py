@@ -518,63 +518,11 @@ def visualize_color(hex_color):
 
 # ==================== Flask 后端接口 ====================
 #即对接文档
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def root():
-    if request.method == 'GET':
-        return send_file('index.html')
-    try:
-        data = request.get_json()
-        print("收到的数据:", data)  # 添加日志
-        
-        if not data:
-            return jsonify({'error': '未接收到数据'}), 400
-            
-        # 获取输入数据
-        name = data.get('name')
-        sex = data.get('sex')
-        birth_type = data.get('type')
-        year = data.get('year')
-        month = data.get('month')
-        day = data.get('day')
-        hours = data.get('hours')
-        minute = data.get('minute')
-        
-        # 检查必要参数
-        required_fields = {
-            'name': name,
-            'sex': sex,
-            'type': birth_type,
-            'year': year,
-            'month': month,
-            'day': day,
-            'hours': hours,
-            'minute': minute
-        }
-        
-        missing_fields = [field for field, value in required_fields.items() if value is None]
-        if missing_fields:
-            return jsonify({'error': f'缺少必要的参数: {", ".join(missing_fields)}'}), 400
-            
-        # 类型检查
-        try:
-            sex = int(sex)
-            birth_type = int(birth_type)
-            year = int(year)
-            month = int(month)
-            day = int(day)
-            hours = int(hours)
-            minute = int(minute)
-        except (ValueError, TypeError) as e:
-            return jsonify({'error': f'参数类型错误: {str(e)}'}), 400
-            
-        # 调用原有的分析函数
-        return analyze_bazi()
-        
-    except Exception as e:
-        print("错误:", str(e))  # 添加日志
-        return jsonify({'error': f'服务器错误: {str(e)}'}), 500
+    return send_file('index.html')
 
-@app.route('/api/analyze', methods=['POST', 'OPTIONS'])
+@app.route('/analyze', methods=['POST', 'OPTIONS'])
 def analyze_bazi():
     if request.method == 'OPTIONS':
         response = make_response()
@@ -585,37 +533,57 @@ def analyze_bazi():
 
     try:
         data = request.json
-        name = data.get('name', '')
-        sex = data.get('sex', '')
-        birth_type = data.get('birth_type', '')
-        year = data.get('year', '')
-        month = data.get('month', '')
-        day = data.get('day', '')
-        hours = data.get('hours', '')
-        minute = data.get('minute', '')
+        if not data:
+            return jsonify({'error': '未接收到数据'}), 400
+
+        # 获取输入数据
+        name = data.get('name')
+        sex = data.get('sex')
+        birth_type = data.get('birth_type')
+        year = data.get('year')
+        month = data.get('month')
+        day = data.get('day')
+        hours = data.get('hours')
+        minute = data.get('minute')
+
+        # 检查必要参数
+        required_fields = {
+            'name': name,
+            'sex': sex,
+            'birth_type': birth_type,
+            'year': year,
+            'month': month,
+            'day': day,
+            'hours': hours,
+            'minute': minute
+        }
+
+        missing_fields = [field for field, value in required_fields.items() if value is None]
+        if missing_fields:
+            return jsonify({'error': f'缺少必要的参数: {", ".join(missing_fields)}'}), 400
 
         # 获取八字数据
         bazi_list = get_bazi_from_api(name, sex, birth_type, year, month, day, hours, minute)
-        
+
         # 分析八字
         analysis_result = advanced_analyze(bazi_list)
-        
+
         # 获取今日干支
         today_gan, today_zhi = get_today_ganzhi()
-        
+
         # 生成今日幸运色
         lucky_color_info = generate_daily_lucky_color(bazi_list, today_gan, today_zhi)
-        
+
         # 获取水晶建议
         crystal_suggestions = choose_crystals_based_on_xi_shen(analysis_result)
         crystal_suggestions.extend(choose_crystals_based_on_wuxing_deficiency(analysis_result))
-        
+
         # 获取幸运数字
         lucky_numbers = calculate_lucky_numbers(analysis_result)
-        
+
         # 获取日常活动建议
         daily_activities = choose_daily_activities(analysis_result)
-        
+
         response_data = {
             'bazi': bazi_list,
             'analysis': analysis_result,
@@ -624,16 +592,12 @@ def analyze_bazi():
             'lucky_numbers': lucky_numbers,
             'daily_activities': daily_activities
         }
-        
-        return jsonify(response_data)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/analyze', methods=['OPTIONS'])
-def handle_options():
-    response = make_response()
-    return response
+        return jsonify(response_data)
+
+    except Exception as e:
+        print("错误:", str(e))  # 添加日志
+        return jsonify({'error': str(e)}), 500
 
 #把主程序入口换成这个
 if __name__ == "__main__":
