@@ -95,7 +95,7 @@ document
   });
 
 // 发送请求到后端
-fetch("http://178.16.140.245/", {
+fetch("http://178.16.140.245:5000/", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
