@@ -237,11 +237,11 @@ document.addEventListener("DOMContentLoaded", function () {
     body: JSON.stringify({
       name: formData.name,
       sex: parseInt(formData.sex),
-      type: parseInt(formData.type),
+      birth_type: parseInt(formData.type),
       year: parseInt(formData.year),
       month: parseInt(formData.month),
       day: parseInt(formData.day),
-      hours: parseInt(formData.hours),
+      hours: parseInt(formData.hours || formData.hour),
       minute: parseInt(formData.minute)
     })
   })
