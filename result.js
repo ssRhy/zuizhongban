@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 请求后台进行八字分析
-  fetch("http://178.16.140.245/analyze", {
+  fetch("http://178.16.140.245:5000/analyze", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

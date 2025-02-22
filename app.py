@@ -12,11 +12,9 @@ def serve_static(filename):
 
 CORS(app, 
      resources={r"/*": {
-         "origins": ["http://127.0.0.1:5000", "http://127.0.0.1:5500", "http://178.16.140.245"],
+         "origins": ["http://127.0.0.1:5000", "http://127.0.0.1:5500", "http://178.16.140.245:5000", "http://178.16.140.245"],
          "methods": ["GET", "POST", "OPTIONS"],
-         "allow_headers": ["Content-Type"],
-         "supports_credentials": True,
-         "max_age": 3600
+         "allow_headers": ["Content-Type"]
      }})
 
 # ==================== 基础数据配置 ====================
