@@ -100,6 +100,9 @@ fetch("http://178.16.140.245:5000/", {
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
   },
   mode: "cors",
   credentials: "include",

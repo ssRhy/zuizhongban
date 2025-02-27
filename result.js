@@ -214,6 +214,16 @@ function handleAnalysisData(data) {
   }
 }
 
+// 环境配置
+const config = {
+  apiUrl: window.location.hostname === 'localhost' || 
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.startsWith('10.') ||
+          window.location.hostname.startsWith('192.168.')
+      ? `http://${window.location.hostname}:5000`  // 使用相同的主机名
+      : 'http://178.16.140.245:5000'  // 生产环境
+};
+
 // 页面加载完成后执行
 document.addEventListener("DOMContentLoaded", function () {
   // 获取并显示分析结果
@@ -248,13 +258,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 请求后台进行八字分析
-  fetch("http://178.16.140.245:5000/analyze", {
+  fetch(`${config.apiUrl}/analyze`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
-    mode: "cors",
-    credentials: "include",
     body: JSON.stringify({
       name: formData.name,
       sex: parseInt(formData.sex),

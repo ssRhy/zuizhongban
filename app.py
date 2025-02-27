@@ -5,38 +5,31 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
+# 配置CORS，允许所有来源访问
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": True
+    }
+})
+
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin', '*')
+    response.headers.update({
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Credentials': 'true'
+    })
+    return response
+
 # 添加静态文件路由
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('.', filename)
-
-CORS(app, 
-     resources={r"/*": {
-         "origins": [
-             "http://127.0.0.1:5000",  # 本地开发
-             "http://127.0.0.1:5500",  # Live Server
-             "http://178.16.140.245",  # VPS IP
-             "http://178.16.140.245:5000"  # Flask/Gunicorn 端口
-         ],
-         "methods": ["GET", "POST", "OPTIONS"],
-         "allow_headers": ["Content-Type"],
-         "supports_credentials": True
-     }})
-
-@app.after_request
-def after_request(response):
-    allowed_origins = [
-        'http://127.0.0.1:5501',  # 本地开发
-        'http://178.16.140.245',  # VPS IP
-        'http://178.16.140.245:5000'  # Flask/Gunicorn 端口
-    ]
-    origin = request.headers.get('Origin')
-    if origin in allowed_origins:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
 
 # ==================== 基础数据配置 ====================
 TIANGAN_WUXING = {
@@ -538,17 +531,28 @@ def visualize_color(hex_color):
     return color_info
 
 # ==================== Flask 后端接口 ====================
-#即对接文档
+
 #即对接文档
 @app.route('/', methods=['GET'])
 def root():
     return send_file('index.html')
 
-@app.route('/analyze', methods=['POST', 'OPTIONS'])
-def analyze_bazi():
-    if request.method == 'OPTIONS':
-        return '', 200
+# 处理OPTIONS请求
+@app.route('/analyze', methods=['OPTIONS'])
+@app.route('/api/analyze', methods=['OPTIONS'])
+def handle_preflight():
+    response = make_response()
+    origin = request.headers.get('Origin', '*')
+    response.headers.update({
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Credentials': 'true'
+    })
+    return response
 
+@app.route('/analyze', methods=['POST'])
+def analyze_bazi():
     try:
         data = request.json
         if not data:
@@ -665,7 +669,7 @@ def analyze_bazi():
         error_response = jsonify({'error': f'服务器错误: {str(e)}'})
         return error_response, 500
 
-@app.route('/api/analyze', methods=['POST', 'OPTIONS'])
+@app.route('/api/analyze', methods=['POST'])
 def analyze_bazi_api():
     try:
         data = request.get_json()
@@ -761,11 +765,6 @@ def analyze_bazi_api():
     except Exception as e:
         return jsonify({'error': f'请求处理失败: {str(e)}'}), 400
 
-@app.route('/api/analyze', methods=['OPTIONS'])
-def handle_options():
-    response = make_response()
-    return response
-
 #把主程序入口换成这个
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
